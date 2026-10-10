@@ -14,7 +14,7 @@ class Main:
             print('-' * 40)
             print(f'{"":14} VaultReco')
             print('-' * 40)
-            print("[1] Course Structure\n[2] Attendance Calculate\n[3] CGPA Result Calculate\n[4] Exit\n")
+            print("[1] Course Structure\n[2] Attendance Calculate\n[3] CGPA Result Calculate\n[4] Exit\n", '-' * 39, "\n")
             
             main_options = input("Enter the Opitons (1 - 4): ")
             

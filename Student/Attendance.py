@@ -3,14 +3,17 @@ import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from helper import Helper
 
+
 class AttendanceCalculator:
     def __init__(self):
         self.helper = Helper()
+
         # ============ Array Variable ============
         # Note: Class Array Position [ 0 = Lecture Class | 1 = Tutorial Class | 2 = Practical Class ]
         self.arr_oneClassDuration = [None] * 3 
         self.arr_classDuration = [None] * 3
         self.arr_classTime = [1] * 3 
+        self.arr_missedClass = [0] * 3
 
         self.class_time = None
 
@@ -35,34 +38,40 @@ class AttendanceCalculator:
         self.barlistOut = self.semester_period - 2
         print(f"System: Semester Period Set to {self.semester_period} weeks.")   
 
-        self.options_menu()
+        self.options_menu() # Pass to the options menu function
 
 
     def options_menu(self):
+        from main import Main
+        self.main = Main()
         while True:
             self.helper.clr_scr()
 
             print('-' * 40)
             print(f'{"":13} Options Menu')
             print('-' * 40)
-            print("[1] Set Class Duration\n[2] Attendance Calculate\n[3] Return to Menu\n", '-' * 40, "\n")
+            print("[1] Set Class Duration\n[2] Attendance Calculate\n[3] Return to Menu\n", '-' * 39, "\n")
 
             options_choose = input("Enter the Opitons (1 - 3): ")
             match options_choose:
                 case '1':
                     self.class_duration()
-                    break
+                    continue
                 case '2':
                     if (self.semester_type == "Short Semester"):
-                        self.short_semester()
-                        self.helper.function_not_deploy("Sorry, Function Not Yet Deploy!") # ----------------------------Calculation Method Not Yet Deploy
-                        # break
+                        if any(x is None for x in self.arr_classDuration):
+                            self.helper.error_display("System: Class Duration Cannot Be Empty!")
+                        else:
+                            self.calculation("short_semester")
+                            continue
                     elif (self.semester_type == "Long Semester"):
-                        self.long_semester()      
-                        self.helper.function_not_deploy("Sorry, Function Not Yet Deploy!") # ----------------------------Calculation Method Not Yet Deploy  
-                        # break
+                        if any(x is None for x in self.arr_classDuration):
+                            self.helper.error_display("System: Class Duration Cannot Be Empty!")
+                        else:
+                            self.calculation("long_semester")
+                            continue
                 case '3':
-                    return 0
+                    return self.main.run()
                 case _:
                     self.helper.error_display("System: Please Only Enter (1-3)!")
 
@@ -97,7 +106,7 @@ class AttendanceCalculator:
                 modify_time = input("\nDo you want to modify class time(Y/N): ").strip().upper()
 
                 match modify_time:
-                    case "Y":
+                    case 'Y' | 'y':
                         while True:
                             try:
                                 self.class_time = int(input("Enter Class Time(per week): "))
@@ -116,9 +125,8 @@ class AttendanceCalculator:
                                 self.helper.error_display("System: Please Enter Digit Only!")
                                 class_duration_table()
                         break
-                    case "N":
-                        pass
-                        break
+                    case 'N' | 'n':
+                        return
                     case _:
                         self.helper.error_display("System: Please only enter Y or N!")
 
@@ -130,7 +138,7 @@ class AttendanceCalculator:
             while True:
                 self.helper.clr_scr()
                 class_duration_table()
-                print("\n[1] Change Lecture Class Duration\n[2] Change Tutorial Class Duration\n[3] Change Practical Class Duration\n[4] Return to Options Menu\n")
+                print("\n[1] Change Lecture Class Duration\n[2] Change Tutorial Class Duration\n[3] Change Practical Class Duration\n[4] Return to Options Menu\n", '-' * 39, "\n")
                 self.change_duration_choice = input("Enter The Class Type to Change Duration (1-4): ")
 
                 match self.change_duration_choice:
@@ -163,8 +171,8 @@ class AttendanceCalculator:
                         self.arr_classDuration[0] = total_classDuration
 
                         self.helper.clr_scr()
-                        change_duration_options()
-                        break
+                        return change_duration_options() # After modify the class time, return back to the change_duration_options
+
                     case "2":
                         self.helper.clr_scr()
                         class_duration_table()
@@ -194,8 +202,7 @@ class AttendanceCalculator:
                         self.arr_classDuration[1] = total_classDuration
 
                         self.helper.clr_scr()
-                        change_duration_options()
-                        break
+                        return change_duration_options() # After modify the class time, return back to the change_duration_options
                     case "3":
                         self.helper.clr_scr()
                         class_duration_table()
@@ -224,11 +231,10 @@ class AttendanceCalculator:
                         self.arr_classDuration[2] = total_classDuration
 
                         self.helper.clr_scr()
-                        change_duration_options()
-                        break
+                        return change_duration_options() # After modify the class time, return back to the change_duration_options
                     case "4":
                         self.helper.clr_scr()
-                        self.options_menu()
+                        return self.options_menu()
                     case _:
                         self.helper.error_display("System: Please Only Enter (1-4)!")
 
@@ -240,23 +246,122 @@ class AttendanceCalculator:
             self.change_duration_choice = input("\nDo You Want to Change Class Duration (Y/N): ")
 
             match self.change_duration_choice:
-                case 'Y':
+                case 'Y' | 'y':
                     change_duration_options()
                     break
-                case 'N':
-                    self.options_menu()
-                    break
+                case 'N' | 'n':
+                    return # Do not change the class duration, return back to the options menu
                 case _:
                     self.helper.error_display("System: Please only enter Y or N!")
 
-
-    def long_semester(self):
-        pass
-    
-    def short_semester(self):
-        pass
-
-    def calculation(self):
-        pass
-
-
+    def calculation(self, semester_type):
+        def calculation_header():
+            print('-' * 40)
+            print(f'{"":9} Attendance Calculation')
+            print('-' * 40)
+            
+        def missed_time_error():
+            if (semester_type == "long_semester" and self.missed_time > 14):
+                self.helper.error_display("System: Invalid Study Week Range!")
+            elif (semester_type == "short_semester" and self.missed_time > 8):
+                self.helper.error_display("System: Invalid Study Week Range!")
+            elif any(x is None or 0 for x in self.arr_classDuration):
+                self.helper.error_display("System: Don't Have Class in Semester!")
+        
+        def missed_class_choice():
+            while True:
+                self.helper.clr_scr()
+                print('-' * 40)
+                print(f'{"":9} Set Missed Class')
+                print('-' * 40)
+                print("[1] Lecture Class\n[2] Tutorial Class\n[3] Practical Class\n[4] Return to Options Menu\n", "-" * 39, "\n")
+                self.missed_choice = input("Enter Missed Class Type (1-4): ")
+                match self.missed_choice:
+                    case '1':
+                        try:
+                            self.missed_time = int(input("Enter Lecture Class Missed Time: "))
+                            missed_time_error()
+                            self.arr_missedClass[0] = self.missed_time
+                            #break
+                            
+                            self.helper.function_not_deploy("More Function Will Be Deploy Soon!") # ---------------------------- REMOVE
+                            break
+                        except ValueError:
+                            self.helper.error_display("System: Please Enter Digit Only!")   
+                        
+                    case '2':
+                        try:
+                            self.missed_time = int(input("Enter Tutorial Class Missed Time: "))
+                            missed_time_error()
+                            self.arr_missedClass[1] = self.missed_time
+                            #break
+                            
+                            self.helper.function_not_deploy("More Function Will Be Deploy Soon!") # ---------------------------- REMOVE
+                            break
+                        except ValueError:
+                            self.helper.error_display("System: Please Enter Digit Only!")   
+                    case '3':
+                        try:
+                            self.missed_time = int(input("Enter Practical Class Missed Time: "))
+                            missed_time_error()
+                            self.arr_missedClass[2] = self.missed_time
+                            #break
+                            
+                            self.helper.function_not_deploy("More Function Will Be Deploy Soon!") # ---------------------------- REMOVE
+                            return 0
+                        except ValueError:
+                            self.helper.error_display("System: Please Enter Digit Only!")   
+                    case '4':
+                        return # Do not change missed class, return back to the options menu
+                    case _:
+                        self.helper.error_display("System: Please Only Enter (1-4)!")
+                                
+            
+        if (semester_type == "long_semester"):
+            while True:
+                try:
+                    self.helper.clr_scr()
+                    calculation_header()
+                    self.current_study_week = int(input("Enter Currently Week: "))
+                    if (self.current_study_week < 0 or self.current_study_week > 14):
+                        self.helper.error_display("System: Invalid Study Week Range!")
+                    else:
+                        break
+                except ValueError:
+                    self.helper.error_display("System: Please Enter Digit Only!")
+            while True:
+                self.missed_options = input("Do You Have Missed Class(Y/N): ").strip().lower()
+                match self.missed_options:
+                    case 'n':
+                        self.helper.function_not_deploy("Sorry, Function Not Yet Deploy!")
+                        break 
+                    case 'y':
+                        missed_class_choice()
+                        break    
+                    case _:
+                        self.helper.error_display("System: Please only enter Y or N!")    
+                    
+        elif (semester_type == "short_semester"):
+            while True:
+                try:
+                    self.helper.clr_scr()
+                    calculation_header()
+                    self.current_study_week = int(input("Enter Currently Week: "))
+                    if (self.current_study_week < 0 or self.current_study_week > 8):
+                        self.helper.error_display("System: Invalid Study Week Range!")
+                    else:
+                        break
+                except ValueError:
+                    self.helper.error_display("System: Please Enter Digit Only!")
+            while True:
+                self.missed_options = input("Do You Have Missed Class(Y/N): ").strip().lower()
+                match self.missed_options:
+                    case 'n':
+                        self.helper.function_not_deploy("Sorry, Function Not Yet Deploy!")
+                        break 
+                    case 'y':
+                        missed_class_choice()
+                        break    
+                    case _:
+                        self.helper.error_display("System: Please only enter Y or N!")            
+                
