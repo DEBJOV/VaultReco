@@ -16,3 +16,7 @@ The main purpose of VaultReco is to help student to keep track of their attendan
 -- 
 Python 3.9.6 or above\
 ***Note:*** VaultReco runs directly in the terminal.
+
+**Version Update**
+1. Rework the pass function method, purposely to reduce the duplicate page of the system
+2. Improve the connection of each function for further development
