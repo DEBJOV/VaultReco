@@ -14,7 +14,7 @@ class AttendanceCalculator:
         self.arr_classDuration = [None] * 3
         self.arr_classTime = [1] * 3 
         self.arr_missedClass = [0] * 3
-
+        self.arr_TotalAttendTime = [0] * 3
         self.class_time = None
 
 
@@ -166,7 +166,8 @@ class AttendanceCalculator:
                             else:
                                 self.arr_oneClassDuration[0] = self.class_duration_time
                                 break   
-
+                            
+                        self.arr_oneClassDuration[0] = self.class_duration_time
                         total_classDuration = self.class_duration_time * self.arr_classTime[0]
                         self.arr_classDuration[0] = total_classDuration
 
@@ -197,7 +198,8 @@ class AttendanceCalculator:
                             else:
                                 self.arr_oneClassDuration[1] = self.class_duration_time
                                 break   
-
+                            
+                        self.arr_oneClassDuration[1] = self.class_duration_time
                         total_classDuration = self.class_duration_time * self.arr_classTime[1]
                         self.arr_classDuration[1] = total_classDuration
 
@@ -227,6 +229,7 @@ class AttendanceCalculator:
                             else:
                                 self.arr_oneClassDuration[2] = self.class_duration_time
                                 break   
+                        self.arr_oneClassDuration[2] = self.class_duration_time
                         total_classDuration = self.class_duration_time * self.arr_classTime[2]
                         self.arr_classDuration[2] = total_classDuration
 
@@ -263,56 +266,110 @@ class AttendanceCalculator:
         def missed_time_error():
             if (semester_type == "long_semester" and self.missed_time > 14):
                 self.helper.error_display("System: Invalid Study Week Range!")
+                return True
             elif (semester_type == "short_semester" and self.missed_time > 8):
                 self.helper.error_display("System: Invalid Study Week Range!")
-            elif any(x is None or 0 for x in self.arr_classDuration):
+                return True
+            elif (self.current_study_week < self.missed_time):
+                self.helper.error_display("System: Missed Time Cannot More Than Current Week!")
+                return True
+            elif any(x is None or x == 0 for x in self.arr_classDuration):
                 self.helper.error_display("System: Don't Have Class in Semester!")
+                return True
+            return False
         
+        def set_missed_header():
+            print('-' * 40)
+            print(f'{"":9} Set Missed Class')
+            print('-' * 40)
+            
+        def attendance_calculation(): 
+            # All The Attendance Calculation and Display Result
+            currentPresentTime = sum(self.arr_TotalAttendTime)
+            currentTotalTime = (self.current_study_week * sum(self.arr_classDuration))
+            
+            percentage = (currentPresentTime / currentTotalTime) * 100
+            
+            self.helper.clr_scr()
+            
+            print('-' * 40)
+            print(f'{"":9} Attendance Percentage')
+            print('-' * 40)
+            print(f"Attendance Percentage: {percentage:.2f}\n")
+            print('-' * 40)
+            
+            
+            
         def missed_class_choice():
             while True:
                 self.helper.clr_scr()
-                print('-' * 40)
-                print(f'{"":9} Set Missed Class')
-                print('-' * 40)
-                print("[1] Lecture Class\n[2] Tutorial Class\n[3] Practical Class\n[4] Return to Options Menu\n", "-" * 39, "\n")
+                set_missed_header()
+                print("[1] Lecture Class\n[2] Tutorial Class\n[3] Practical Class\n[4] Start Attendance Calculation\n", "-" * 39, "\n")
+                
                 self.missed_choice = input("Enter Missed Class Type (1-4): ")
+
+
                 match self.missed_choice:
                     case '1':
-                        try:
-                            self.missed_time = int(input("Enter Lecture Class Missed Time: "))
-                            missed_time_error()
-                            self.arr_missedClass[0] = self.missed_time
-                            #break
-                            
-                            self.helper.function_not_deploy("More Function Will Be Deploy Soon!") # ---------------------------- REMOVE
-                            break
-                        except ValueError:
-                            self.helper.error_display("System: Please Enter Digit Only!")   
+                        while True:
+                            try:
+                                self.helper.clr_scr()
+                                set_missed_header()
+                                self.missed_time = int(input("Enter Lecture Class Missed Time: "))
+                                if missed_time_error():
+                                    continue
+                                #take Note
+                                self.arr_missedClass[0] = self.missed_time
+                                self.missed_Attendtime = self.arr_missedClass[0] * self.arr_oneClassDuration[0]
+                                self.totalTime = self.arr_classDuration[0] * self.current_study_week 
+                                self.arr_TotalAttendTime[0] = self.totalTime - self.missed_Attendtime
+                                
+                                break
+                                
+                            except ValueError:
+                                self.helper.error_display("System: Please Enter Digit Only!")   
                         
                     case '2':
-                        try:
-                            self.missed_time = int(input("Enter Tutorial Class Missed Time: "))
-                            missed_time_error()
-                            self.arr_missedClass[1] = self.missed_time
-                            #break
-                            
-                            self.helper.function_not_deploy("More Function Will Be Deploy Soon!") # ---------------------------- REMOVE
-                            break
-                        except ValueError:
-                            self.helper.error_display("System: Please Enter Digit Only!")   
+                        while True:
+                            try:
+                                self.helper.clr_scr()
+                                set_missed_header()
+                                self.missed_time = int(input("Enter Tutorial Class Missed Time: "))
+                                if missed_time_error():
+                                    continue
+                                #take Note
+                                self.arr_missedClass[1] = self.missed_time
+                                self.missed_Attendtime = self.arr_missedClass[1] * self.arr_oneClassDuration[1]
+                                self.totalTime = self.arr_classDuration[1] * self.current_study_week 
+                                self.arr_TotalAttendTime[1] = self.totalTime - self.missed_Attendtime
+
+                                break
+                                
+                            except ValueError:
+                                self.helper.error_display("System: Please Enter Digit Only!")  
                     case '3':
-                        try:
-                            self.missed_time = int(input("Enter Practical Class Missed Time: "))
-                            missed_time_error()
-                            self.arr_missedClass[2] = self.missed_time
-                            #break
-                            
-                            self.helper.function_not_deploy("More Function Will Be Deploy Soon!") # ---------------------------- REMOVE
-                            return 0
-                        except ValueError:
-                            self.helper.error_display("System: Please Enter Digit Only!")   
+                        while True:
+                            try:
+                                self.helper.clr_scr()
+                                set_missed_header()
+                                self.missed_time = int(input("Enter Practical Class Missed Time: "))
+                                if missed_time_error():
+                                    continue
+                                #take Note
+                                self.arr_missedClass[2] = self.missed_time
+                                self.missed_Attendtime = self.arr_missedClass[2] * self.arr_oneClassDuration[2]
+                                self.totalTime = self.arr_classDuration[2] * self.current_study_week 
+                                self.arr_TotalAttendTime[2] = self.totalTime - self.missed_Attendtime
+
+                                break
+                                
+                            except ValueError:
+                                self.helper.error_display("System: Please Enter Digit Only!")   
                     case '4':
-                        return # Do not change missed class, return back to the options menu
+                        attendance_calculation()
+                        
+                        self.helper.function_not_deploy("More Function will be Deploy!") #------------------------------ REMOVE
+                        sys.exit()
                     case _:
                         self.helper.error_display("System: Please Only Enter (1-4)!")
                                 
@@ -357,11 +414,15 @@ class AttendanceCalculator:
                 self.missed_options = input("Do You Have Missed Class(Y/N): ").strip().lower()
                 match self.missed_options:
                     case 'n':
-                        self.helper.function_not_deploy("Sorry, Function Not Yet Deploy!")
-                        break 
+                        attendance_calculation()
                     case 'y':
                         missed_class_choice()
                         break    
                     case _:
                         self.helper.error_display("System: Please only enter Y or N!")            
                 
+
+# Attendance Percentage Calculation function have been deployed
+# More function such as calculate number of classes the student can still be absent from and remaining allowable absences
+# For this version, the system testing is not been done. this is not the final version of v0.005
+# Notice: BE CAREFUL TO USE THIS VERSION
