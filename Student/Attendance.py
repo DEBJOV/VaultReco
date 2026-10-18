@@ -17,11 +17,15 @@ class AttendanceCalculator:
         self.arr_TotalAttendTime = [0] * 3
         self.class_time = None
 
+    def main_header(self):
+            print('-' * 40)
+            print(f'{"":8} Attendance Calculate')
+            print('-' * 40)
 
     def set_semester(self):
         while (True):
             self.helper.clr_scr()
-
+            self.main_header()
             self.semester_type = input("Enter Semester Type (Long/Short): ").strip().lower()
             if (self.semester_type == "short" or self.semester_type == "s"):
                 self.semester_type = "Short Semester"
@@ -85,9 +89,9 @@ class AttendanceCalculator:
                 print(f"Semester Type: {self.semester_type} ({self.semester_period} Weeks)")
                 print('-' * 40)
                 print("[NOTE: Class Duration Per Weeks]\n")
-                print(f"Lecture Duration(hrs)   : {self.arr_classDuration[0]}")
-                print(f"Tutorial Duration(hrs)  : {self.arr_classDuration[1]}")
-                print(f"Practical Duration(hrs) : {self.arr_classDuration[2]}")
+                print(f"Lecture Duration(mins)   : {self.arr_classDuration[0]}")
+                print(f"Tutorial Duration(mins)  : {self.arr_classDuration[1]}")
+                print(f"Practical Duration(mins) : {self.arr_classDuration[2]}")
             else:
                 print(f'{"":6} Currently Data Still Empty')
             print('-' * 40)
@@ -130,9 +134,6 @@ class AttendanceCalculator:
                     case _:
                         self.helper.error_display("System: Please only enter Y or N!")
 
-
-#TODO: If the user enter less than 5 and more than 0 in the class duration, it will take it as hours automatically
-#TODO (Calculation Function): If the array value is None (one) but not None (all), the value will become 1 automatically
 
         def change_duration_options():
             while True:
@@ -389,9 +390,14 @@ class AttendanceCalculator:
             while True:
                 self.missed_options = input("Do You Have Missed Class(Y/N): ").strip().lower()
                 match self.missed_options:
-                    case 'n':
-                        self.helper.function_not_deploy("Sorry, Function Not Yet Deploy!")
-                        break 
+                    case 'n':                                                   
+                        self.arr_TotalAttendTime[0] = (self.arr_classDuration[0] * self.current_study_week)              
+                        self.arr_TotalAttendTime[1] = (self.arr_classDuration[1] * self.current_study_week)
+                        self.arr_TotalAttendTime[2] = (self.arr_classDuration[2] * self.current_study_week)           
+                        attendance_calculation()
+                        
+                        self.helper.function_not_deploy("More Function will be Deploy!") #------------------------------ REMOVE
+                        sys.exit()
                     case 'y':
                         missed_class_choice()
                         break    
@@ -422,7 +428,3 @@ class AttendanceCalculator:
                         self.helper.error_display("System: Please only enter Y or N!")            
                 
 
-# Attendance Percentage Calculation function have been deployed
-# More function such as calculate number of classes the student can still be absent from and remaining allowable absences
-# For this version, the system testing is not been done. this is not the final version of v0.005
-# Notice: BE CAREFUL TO USE THIS VERSION
