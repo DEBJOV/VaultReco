@@ -25,3 +25,21 @@ class Helper:
         print("-" * 10)
         getpass.getpass("Press ENTER to try again...")
         self.clr_scr()
+        
+    def return_options_menu(self):
+        print("-" * 10)
+        print("System: Redirect to Options Menu")
+        print("-" * 10)
+        getpass.getpass("Press ENTER to Options Menu...")
+        self.clr_scr()
+        
+        
+# NOTE: To access the color font function, {COLOR.RED}Sentences{COLOR.RESET}
+class Color:
+    RED = "\033[31m"
+    GREEN = "\033[32m"
+    YELLOW = "\033[33m"
+    BLUE = "\033[34m"
+    CYAN = "\033[36m"
+    RESET = "\033[0m"
+    BOLD = "\033[1m"

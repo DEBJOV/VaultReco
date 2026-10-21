@@ -1,7 +1,7 @@
 import os, sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from helper import Helper
+from helper import Helper, Color
 
 
 class AttendanceCalculator:
@@ -10,11 +10,13 @@ class AttendanceCalculator:
 
         # ============ Array Variable ============
         # Note: Class Array Position [ 0 = Lecture Class | 1 = Tutorial Class | 2 = Practical Class ]
-        self.arr_oneClassDuration = [None] * 3 
-        self.arr_classDuration = [None] * 3
-        self.arr_classTime = [1] * 3 
-        self.arr_missedClass = [0] * 3
-        self.arr_TotalAttendTime = [0] * 3
+        self.arr_oneClassDuration = [None] * 3  # Store one class duration in mins
+        self.arr_classDuration = [None] * 3     # Store total duration in mins per week
+        self.arr_classTime = [1] * 3            # Store class time per week (total class attend) 
+        self.arr_missedClass = [0] * 3          # Store missed class time in current semester
+        self.arr_TotalAttendTime = [0] * 3      # Store currently total duration attend class
+        
+        self.arr_TotalMissedTime = [0] * 3      # Store currently total missed class duratiuon (new array)
         self.class_time = None
 
     def main_header(self):
@@ -37,7 +39,6 @@ class AttendanceCalculator:
                 break
             else: 
                 self.helper.error_display("System: Please only enter long or short!")
-                
 
         self.barlistOut = self.semester_period - 2
         print(f"System: Semester Period Set to {self.semester_period} weeks.")   
@@ -65,12 +66,16 @@ class AttendanceCalculator:
                     if (self.semester_type == "Short Semester"):
                         if any(x is None for x in self.arr_classDuration):
                             self.helper.error_display("System: Class Duration Cannot Be Empty!")
+                        elif all(x is 0 for x in self.arr_classDuration):
+                            self.helper.error_display("System: Don't Have Class in Semester!")
                         else:
                             self.calculation("short_semester")
                             continue
                     elif (self.semester_type == "Long Semester"):
                         if any(x is None for x in self.arr_classDuration):
                             self.helper.error_display("System: Class Duration Cannot Be Empty!")
+                        elif all(x is 0 for x in self.arr_classDuration):
+                            self.helper.error_display("System: Don't Have Class in Semester!")
                         else:
                             self.calculation("long_semester")
                             continue
@@ -162,7 +167,8 @@ class AttendanceCalculator:
                                 class_time_modify("lecture_class")   
                                 break
                             elif (self.class_duration_time == 0): 
-                                self.arr_classTime[0] = 0
+                                self.arr_oneClassDuration[0] = 0
+                                self.arr_classDuration[0] = 0
                                 break
                             else:
                                 self.arr_oneClassDuration[0] = self.class_duration_time
@@ -194,7 +200,8 @@ class AttendanceCalculator:
                                 class_time_modify("tutorial_class")   
                                 break
                             elif (self.class_duration_time == 0): 
-                                self.arr_classTime[1] = 0
+                                self.arr_oneClassDuration[1] = 0
+                                self.arr_classDuration[1] = 0
                                 break
                             else:
                                 self.arr_oneClassDuration[1] = self.class_duration_time
@@ -225,7 +232,8 @@ class AttendanceCalculator:
                                 class_time_modify("practical_class")   
                                 break
                             elif (self.class_duration_time == 0): 
-                                self.arr_classTime[2] = 0
+                                self.arr_oneClassDuration[1] = 0
+                                self.arr_classDuration[1] = 0
                                 break
                             else:
                                 self.arr_oneClassDuration[2] = self.class_duration_time
@@ -242,18 +250,17 @@ class AttendanceCalculator:
                     case _:
                         self.helper.error_display("System: Please Only Enter (1-4)!")
 
-
         while True:
             self.helper.clr_scr()
             class_duration_table()
 
-            self.change_duration_choice = input("\nDo You Want to Change Class Duration (Y/N): ")
+            self.change_duration_choice = input("\nDo You Want to Change Class Duration (Y/N): ").strip().lower()
 
             match self.change_duration_choice:
-                case 'Y' | 'y':
+                case 'y':
                     change_duration_options()
                     break
-                case 'N' | 'n':
+                case 'n':
                     return # Do not change the class duration, return back to the options menu
                 case _:
                     self.helper.error_display("System: Please only enter Y or N!")
@@ -264,17 +271,15 @@ class AttendanceCalculator:
             print(f'{"":9} Attendance Calculation')
             print('-' * 40)
             
-        def missed_time_error():
-            if (semester_type == "long_semester" and self.missed_time > 14):
-                self.helper.error_display("System: Invalid Study Week Range!")
+        def missed_time_error(class_index):
+            max_missed = (self.current_study_week * self.arr_classTime[class_index])
+            if (self.missed_time < 0):
+                self.helper.error_display("System: Missed Time Cannot Be Negative!")
                 return True
-            elif (semester_type == "short_semester" and self.missed_time > 8):
-                self.helper.error_display("System: Invalid Study Week Range!")
-                return True
-            elif (self.current_study_week < self.missed_time):
+            elif (max_missed < self.missed_time):
                 self.helper.error_display("System: Missed Time Cannot More Than Current Week!")
                 return True
-            elif any(x is None or x == 0 for x in self.arr_classDuration):
+            elif self.arr_classDuration[class_index] == 0 or self.arr_classDuration[class_index] < 0:
                 self.helper.error_display("System: Don't Have Class in Semester!")
                 return True
             return False
@@ -284,22 +289,57 @@ class AttendanceCalculator:
             print(f'{"":9} Set Missed Class')
             print('-' * 40)
             
+        def label_isBarred():
+            if (self.alMissedDuration > self.yesMissClass):
+                print(f"{Color.RED}System: You're barred from taking the exam.{Color.RESET}")
+            elif (self.alMissedDuration <= self.yesMissClass):
+                print(f"{Color.GREEN}System: You're not barred from the exam.{Color.RESET}")
+                
+        def canMissDuration_calculation():
+            if (self.alMissedDuration > self.yesMissClass): 
+                self.canMissDuration = 0
+            else:
+                self.canMissDuration = self.yesMissClass - self.alMissedDuration
+            
         def attendance_calculation(): 
-            # All The Attendance Calculation and Display Result
+            # Calculate the percentage of attendance
             currentPresentTime = sum(self.arr_TotalAttendTime)
             currentTotalTime = (self.current_study_week * sum(self.arr_classDuration))
             
-            percentage = (currentPresentTime / currentTotalTime) * 100
+            if (currentTotalTime == 0):
+                percentage = 0.0
+            else:
+                percentage = (currentPresentTime / currentTotalTime) * 100
+            
+            # Calculate number of classes the student can still be absent from
+            if (semester_type == "Short Semester"):
+                total_week = 7
+            else:
+                total_week = 13
+            
+            if (self.current_study_week == self.semester_period):
+                total_week += 1
+                
+            totalClassDuration = sum(self.arr_classDuration) * total_week
+
+            barClassDuration = totalClassDuration * 0.8
+            
+            self.alMissedDuration = sum(self.arr_TotalMissedTime)
+            self.yesMissClass = totalClassDuration - barClassDuration
+            canMissDuration_calculation()
             
             self.helper.clr_scr()
             
             print('-' * 40)
             print(f'{"":9} Attendance Percentage')
             print('-' * 40)
-            print(f"Attendance Percentage: {percentage:.2f}\n")
+            print(f"Current Attendance Percentage: {percentage:.2f}\n")
+            print(f"Remaining Miss Duration(Mins): {self.canMissDuration}")
+            print(f"Available Miss Duration(Mins): {self.alMissedDuration:.2f} / {self.yesMissClass:.2f}\n")
+
+            
+            label_isBarred()
             print('-' * 40)
-            
-            
             
         def missed_class_choice():
             while True:
@@ -309,7 +349,6 @@ class AttendanceCalculator:
                 
                 self.missed_choice = input("Enter Missed Class Type (1-4): ")
 
-
                 match self.missed_choice:
                     case '1':
                         while True:
@@ -317,13 +356,11 @@ class AttendanceCalculator:
                                 self.helper.clr_scr()
                                 set_missed_header()
                                 self.missed_time = int(input("Enter Lecture Class Missed Time: "))
-                                if missed_time_error():
+                                if missed_time_error(0):
                                     continue
                                 #take Note
                                 self.arr_missedClass[0] = self.missed_time
-                                self.missed_Attendtime = self.arr_missedClass[0] * self.arr_oneClassDuration[0]
-                                self.totalTime = self.arr_classDuration[0] * self.current_study_week 
-                                self.arr_TotalAttendTime[0] = self.totalTime - self.missed_Attendtime
+                                self.arr_TotalMissedTime[0] = self.arr_missedClass[0] * self.arr_oneClassDuration[0]
                                 
                                 break
                                 
@@ -336,13 +373,11 @@ class AttendanceCalculator:
                                 self.helper.clr_scr()
                                 set_missed_header()
                                 self.missed_time = int(input("Enter Tutorial Class Missed Time: "))
-                                if missed_time_error():
+                                if missed_time_error(1):
                                     continue
                                 #take Note
                                 self.arr_missedClass[1] = self.missed_time
-                                self.missed_Attendtime = self.arr_missedClass[1] * self.arr_oneClassDuration[1]
-                                self.totalTime = self.arr_classDuration[1] * self.current_study_week 
-                                self.arr_TotalAttendTime[1] = self.totalTime - self.missed_Attendtime
+                                self.arr_TotalMissedTime[1] = self.arr_missedClass[1] * self.arr_oneClassDuration[1]
 
                                 break
                                 
@@ -354,34 +389,36 @@ class AttendanceCalculator:
                                 self.helper.clr_scr()
                                 set_missed_header()
                                 self.missed_time = int(input("Enter Practical Class Missed Time: "))
-                                if missed_time_error():
+                                if missed_time_error(2):
                                     continue
                                 #take Note
                                 self.arr_missedClass[2] = self.missed_time
-                                self.missed_Attendtime = self.arr_missedClass[2] * self.arr_oneClassDuration[2]
-                                self.totalTime = self.arr_classDuration[2] * self.current_study_week 
-                                self.arr_TotalAttendTime[2] = self.totalTime - self.missed_Attendtime
+                                self.arr_TotalMissedTime[2] = self.arr_missedClass[2] * self.arr_oneClassDuration[2]
 
                                 break
                                 
                             except ValueError:
                                 self.helper.error_display("System: Please Enter Digit Only!")   
                     case '4':
+                        for i in range(3):
+                            self.arr_TotalAttendTime[i] = (
+                                (self.arr_classDuration[i] * self.current_study_week)
+                                - self.arr_TotalMissedTime[i]
+                            )
                         attendance_calculation()
                         
-                        self.helper.function_not_deploy("More Function will be Deploy!") #------------------------------ REMOVE
-                        sys.exit()
+                        self.helper.return_options_menu()
+                        return self.options_menu()
                     case _:
                         self.helper.error_display("System: Please Only Enter (1-4)!")
-                                
-            
+                            
         if (semester_type == "long_semester"):
             while True:
                 try:
                     self.helper.clr_scr()
                     calculation_header()
                     self.current_study_week = int(input("Enter Currently Week: "))
-                    if (self.current_study_week < 0 or self.current_study_week > 14):
+                    if (self.current_study_week <= 0 or self.current_study_week > 14):
                         self.helper.error_display("System: Invalid Study Week Range!")
                     else:
                         break
@@ -390,14 +427,14 @@ class AttendanceCalculator:
             while True:
                 self.missed_options = input("Do You Have Missed Class(Y/N): ").strip().lower()
                 match self.missed_options:
-                    case 'n':                                                   
-                        self.arr_TotalAttendTime[0] = (self.arr_classDuration[0] * self.current_study_week)              
-                        self.arr_TotalAttendTime[1] = (self.arr_classDuration[1] * self.current_study_week)
-                        self.arr_TotalAttendTime[2] = (self.arr_classDuration[2] * self.current_study_week)           
+                    case 'n':              
+                        for i in range(3):
+                            self.arr_TotalAttendTime[i] = self.arr_classDuration[i] * self.current_study_week
+   
                         attendance_calculation()
                         
-                        self.helper.function_not_deploy("More Function will be Deploy!") #------------------------------ REMOVE
-                        sys.exit()
+                        self.helper.return_options_menu()
+                        return self.options_menu()
                     case 'y':
                         missed_class_choice()
                         break    
@@ -410,7 +447,7 @@ class AttendanceCalculator:
                     self.helper.clr_scr()
                     calculation_header()
                     self.current_study_week = int(input("Enter Currently Week: "))
-                    if (self.current_study_week < 0 or self.current_study_week > 8):
+                    if (self.current_study_week <= 0 or self.current_study_week > 8):
                         self.helper.error_display("System: Invalid Study Week Range!")
                     else:
                         break
@@ -420,7 +457,13 @@ class AttendanceCalculator:
                 self.missed_options = input("Do You Have Missed Class(Y/N): ").strip().lower()
                 match self.missed_options:
                     case 'n':
+                        for i in range(3):
+                            self.arr_TotalAttendTime[i] = self.arr_classDuration[i] * self.current_study_week
+                            
                         attendance_calculation()
+                        
+                        self.helper.return_options_menu()
+                        return self.options_menu()
                     case 'y':
                         missed_class_choice()
                         break    
