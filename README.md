@@ -7,7 +7,9 @@ The main purpose of VaultReco is to help student to keep track of their attendan
 **Functionality:**
 --
 - Calculate the current attendance percentage.
-- Attendance calculate based on the current week and class time
+- Check whether the student is barred due to insufficient attendance.
+- Calculate the number of classes the student can still be absent from.
+- Remind students about their remaining allowable absences.
 
 
 **System Requirement**
@@ -15,5 +17,11 @@ The main purpose of VaultReco is to help student to keep track of their attendan
 Python 3.9.6 or above\
 ***Note:*** VaultReco runs directly in the terminal.
 
-
-----
+---
+**Version Update(Bug Fixing and Function Update)**
+---
+- The calculation formula have been updated
+- Available miss time function are created
+- Update interface by using font color
+- Improve system validation and logic
+---
